@@ -37,9 +37,10 @@ let SHEET_NAME_COMMON_SETTINGS   = "%settings";
 
 class HeaderTitles {
   id_str                         : string;
+  link                           : string;
   created_at                     : string;
   text                           : string;
-  user_id_str                    : string;
+  //user_id_str                    : string;
   in_reply_to_screen_name        : string;
   retweet_count                  : string;
   favorite_count                 : string;
@@ -47,9 +48,10 @@ class HeaderTitles {
 }
 let HEADER_TITLES:HeaderTitles = {
   id_str                         : "Tweet Id",
+  link                           : "link",
   created_at                     : "Created at",
   text                           : "Tweet",
-  user_id_str                    : "User Id",
+  //user_id_str                    : "User Id",
   in_reply_to_screen_name        : "Reply to",
   retweet_count                  : "Retweet Count",
   favorite_count                 : "Favorite Count",
@@ -57,9 +59,10 @@ let HEADER_TITLES:HeaderTitles = {
 }
 class HeaderCols {
   id_str                         : number;
+  link                           : number;
   created_at                     : number;
   text                           : number;
-  user_id_str                    : number;
+  //user_id_str                    : number;
   in_reply_to_screen_name        : number;
   retweet_count                  : number;
   favorite_count                 : number;
@@ -90,6 +93,30 @@ let g_book                       = SpreadsheetApp.openById(VAL_ID_TARGET_BOOK);
 //=====================================================================================================================
 // CODE for General
 //=====================================================================================================================
+
+//
+// https://qiita.com/SONER-O/items/e80eb586d5ca8576aa65
+//
+function gsGetValuesAndFormulas(range){
+  var valuesAndFomulas = range.getValues();
+  //Logger.log("valuesAndFomulas:%s", valuesAndFomulas);
+  var tempFormulas = range.getFormulas();
+  //Logger.log("tempFormulas:%s", tempFormulas);
+
+  //getValues()で取得した配列とgetFormulas()で取得した配列を突合
+  for(let column = 0; column < valuesAndFomulas[0].length; column++){
+    for(let row = 0; row < valuesAndFomulas.length; row++){
+      //getFormulas()で取得した数式の入っている要素を代入して更新
+      if(tempFormulas[row][column].length != 0){
+        valuesAndFomulas[row][column] = tempFormulas[row][column];
+      }else{
+        ;//何もしない
+      }
+    }
+  }
+  //Logger.log("valuesAndFomulas:%s", valuesAndFomulas);
+  return valuesAndFomulas;
+}
 
 //
 // Name: gsAddLineAtLast
@@ -282,7 +309,6 @@ function getHeaderInfo(sheet, headerTitles:HeaderTitles):HeaderInfo {
   }
   return { screenName: screenName, rowHeader: null, headerCols: null };
 }
-
 //
 // Name: generateHeader
 // Desc:
@@ -321,11 +347,11 @@ function updateStoredTweets(tweets, sheet, headerInfo):number[] {
     throw new Error("updateStoredTweets: range wasn't able to acquired.");
   }
   let idxsUpdatedTweets = []; // array of indexes of handled tweets
-  let valsRng = range.getValues();
+  let valsRng = gsGetValuesAndFormulas(range);
   for (let t = 0; t < tweets.length && valsRng.length > idxsUpdatedTweets.length; t++) {
     for (let i = 0; i < valsRng.length; i++) {
       let objRow = valsRng[i];
-      if (tweets[t].id_str == objRow[headerInfo.headerCols.id_str] && tweets[t].user.id_str == objRow[headerInfo.headerCols.user_id_str]) {
+      if (tweets[t].id_str == objRow[headerInfo.headerCols.id_str] ) { //&& tweets[t].user.id_str == objRow[headerInfo.headerCols.user_id_str]) {
         objRow[headerInfo.headerCols.favorite_count] = tweets[t].favorite_count;
         objRow[headerInfo.headerCols.retweet_count] = tweets[t].retweet_count;
         idxsUpdatedTweets.push(t);
@@ -386,10 +412,11 @@ function addNewTweets(sheet, headerInfo, tweets, idxesUpdatedTweets:number[]) {
     if (-1 != idxesUpdatedTweets.indexOf(t)) {
       continue;
     }
-    valsRng[r][headerInfo.headerCols.id_str         ] = '=HYPERLINK("https://twitter.com/' + tweets[t].screen_name + '/status/' + tweets[t].id_str + '", "' + tweets[t].id_str + '")';
+    valsRng[r][headerInfo.headerCols.id_str         ] = tweets[t].id_str;
+    valsRng[r][headerInfo.headerCols.link           ] = '=HYPERLINK("https://twitter.com/' + tweets[t].screen_name + '/status/' + tweets[t].id_str + '", "link")';
     valsRng[r][headerInfo.headerCols.created_at     ] = tweets[t].created_at;
     valsRng[r][headerInfo.headerCols.text           ] = tweets[t].text;
-    valsRng[r][headerInfo.headerCols.user_id_str    ] = tweets[t].user.id_str;
+    //valsRng[r][headerInfo.headerCols.user_id_str    ] = tweets[t].user.id_str;
     if (tweets[t].in_reply_to_screen_name) {
       valsRng[r][headerInfo.headerCols.in_reply_to_screen_name] = '=HYPERLINK("https://twitter.com/' + tweets[t].in_reply_to_screen_name + '", "' + tweets[t].in_reply_to_screen_name + '")';
     }
