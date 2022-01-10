@@ -28,55 +28,44 @@ let TIME_LOCALE                  = "JST";
 let FORMAT_DATETIME_ISO8601_DATE = "yyyy-MM-dd";
 let FORMAT_DATETIME_ISO8601_TIME = "HH:mm:ss";
 let FORMAT_DATETIME_DATE_NUM     = "yyyyMMdd";
-let FORMAT_DATETIME              = "yyyy-MM-dd (HH:mm:ss)";
+let FORMAT_DATETIME              = "yyyy-MM-dd HH:mm:ss";
 let FORMAT_TIMESTAMP             = "yyyyMMddHHmmss";
 let NAME_SHEET_USAGE             = "!USAGE";
 let NAME_SHEET_LOG               = "!LOG";
 let NAME_SHEET_ERROR             = "!ERROR";
-let SHEET_NAME_COMMON_SETTINGS   = "%settings";
+let SHEET_NAME_COMMON_SETTINGS   = "%Screen Names%";
 
-class HeaderTitles {
-  id_str                         : string;
-  link                           : string;
-  created_at                     : string;
-  text                           : string;
-  //user_id_str                    : string;
-  in_reply_to_screen_name        : string;
-  retweet_count                  : string;
-  favorite_count                 : string;
-  media                          : string;
+class HeaderRow {
+  id_str                         : any;
+  link                           : any;
+  created_at                     : any;
+  text                           : any;
+  in_reply_to_screen_name        : any;
+  retweet_count                  : any;
+  favorite_count                 : any;
+  media                          : any;
 }
-let HEADER_TITLES:HeaderTitles = {
+let HEADER_TITLES:HeaderRow = {
   id_str                         : "Tweet Id",
   link                           : "link",
   created_at                     : "Created at",
   text                           : "Tweet",
-  //user_id_str                    : "User Id",
   in_reply_to_screen_name        : "Reply to",
   retweet_count                  : "Retweet Count",
   favorite_count                 : "Favorite Count",
   media                          : "Media"
 }
-class HeaderCols {
-  id_str                         : number;
-  link                           : number;
-  created_at                     : number;
-  text                           : number;
-  //user_id_str                    : number;
-  in_reply_to_screen_name        : number;
-  retweet_count                  : number;
-  favorite_count                 : number;
-  media                          : number;
-}
 class HeaderInfo {
   screenName                     : string;
   rowHeader                      : number;
-  headerCols                     : HeaderCols;
+  headerCols                     : HeaderRow;
 }
 
 let MAX_ROW_SEEK_HEADER          = 20;
-let MAX_COL_SEEK_HEADER          = Object.keys(HEADER_TITLES).length * 2;
+let MAX_COL_SEEK_HEADER          = Object.keys(HEADER_TITLES).length;
 let DEFAULT_ROW_HEADER           = 4;
+
+let OFFSET_ROW_SCREENNAME_LIST   = 0;
 
 //=====================================================================================================================
 // GLOBALS
@@ -95,27 +84,26 @@ let g_book                       = SpreadsheetApp.openById(VAL_ID_TARGET_BOOK);
 //=====================================================================================================================
 
 //
-// https://qiita.com/SONER-O/items/e80eb586d5ca8576aa65
+// Name: gsGetValuesWithFormulas
+// Desc:
+//  return 2D array with formulas
 //
-function gsGetValuesAndFormulas(range){
-  var valuesAndFomulas = range.getValues();
+function gsGetValuesWithFormulas(range){
+  var valsRng = range.getValues();
   //Logger.log("valuesAndFomulas:%s", valuesAndFomulas);
-  var tempFormulas = range.getFormulas();
+  var formulasRng = range.getFormulas();
   //Logger.log("tempFormulas:%s", tempFormulas);
 
-  //getValues()で取得した配列とgetFormulas()で取得した配列を突合
-  for(let column = 0; column < valuesAndFomulas[0].length; column++){
-    for(let row = 0; row < valuesAndFomulas.length; row++){
-      //getFormulas()で取得した数式の入っている要素を代入して更新
-      if(tempFormulas[row][column].length != 0){
-        valuesAndFomulas[row][column] = tempFormulas[row][column];
+  for(let r = 0; r < valsRng.length; r++){
+    for(let c = 0; c < valsRng[0].length; c++){
+      if(formulasRng[r][c].length != 0){
+        valsRng[r][c] = formulasRng[r][c];
       }else{
-        ;//何もしない
+        ;
       }
     }
   }
-  //Logger.log("valuesAndFomulas:%s", valuesAndFomulas);
-  return valuesAndFomulas;
+  return valsRng;
 }
 
 //
@@ -260,7 +248,7 @@ function twitterUserTimeline(screenName, maxCount, trimUser, excludeReplies, inc
 // Name: getHeaderInfo
 // Desc: Seek the header info from the specified sheet.
 //
-function getHeaderInfo(sheet, headerTitles:HeaderTitles):HeaderInfo {
+function getHeaderInfo(sheet, headerTitles:HeaderRow):HeaderInfo {
   let range = sheet.getRange(1, 1, MAX_ROW_SEEK_HEADER, MAX_COL_SEEK_HEADER);
   if (range == null) {
     return null;
@@ -277,12 +265,11 @@ function getHeaderInfo(sheet, headerTitles:HeaderTitles):HeaderInfo {
   if (!screenName) {
     return null;
   }
-  let r = 1, c;
-  let objRow;
+  let r = 1;
   for (; r < valsRng.length; r++) {
-    objRow = valsRng[r];
-    let headerCols = new HeaderCols();
-    for (c = 0; c < objRow.length; c++) {
+    let objRow = valsRng[r];
+    let headerCols = new HeaderRow();
+    for (let c = 0; c < objRow.length; c++) {
       let txtCell = String(objRow[c]);
       if (!txtCell) {
         continue;
@@ -313,22 +300,25 @@ function getHeaderInfo(sheet, headerTitles:HeaderTitles):HeaderInfo {
 // Name: generateHeader
 // Desc:
 //
-function generateHeader(sheet, headerTitles:HeaderTitles):HeaderInfo {
+function generateHeader(sheet, screenName:string, headerTitles:HeaderRow):HeaderInfo {
   if (sheet.getMaxRows() > 1) {
     sheet.deleteRows(2, sheet.getMaxRows() - 1);
+  }
+  if (sheet.getMaxColumns() > Object.values(headerTitles).length) {
+    sheet.deleteColumns(Object.values(headerTitles).length + 1, sheet.getMaxColumns() - Object.values(headerTitles).length );
   }
   let range = sheet.getRange(1, 1, (DEFAULT_ROW_HEADER + 1), MAX_COL_SEEK_HEADER);
   if (range == null) {
     throw new Error("generateHeader: range wasn't able to acquired.");
   }
   let valsRng = range.getValues();
-  let headerCols = new HeaderCols();
-  let screenName = String(valsRng[0][0]);
+  let headerCols = new HeaderRow();
   let objRow = valsRng[DEFAULT_ROW_HEADER];
   for (let c = 0; c < Object.values(headerTitles).length; c++) {
     objRow[c] = Object.values(headerTitles)[c];
     headerCols[Object.keys(headerTitles)[c]] = c;
   }
+  valsRng[0][0] = screenName;
   range.setValues(valsRng);
   return { screenName: screenName, rowHeader: DEFAULT_ROW_HEADER, headerCols: headerCols };
 }
@@ -342,16 +332,15 @@ function updateStoredTweets(tweets, sheet, headerInfo):number[] {
     return [];
   }
   let range = sheet.getRange(headerInfo.rowHeader + 2, 1, sheet.getLastRow() - (headerInfo.rowHeader + 1), sheet.getLastColumn());
-  //console.log("row=" + (headerInfo.rowHeader+2) + ", col=" + 1 + ", row num=" +  (sheet.getLastRow()-(headerInfo.rowHeader+1)) + ", col num=" + sheet.getLastColumn() );
   if (range == null) {
     throw new Error("updateStoredTweets: range wasn't able to acquired.");
   }
   let idxsUpdatedTweets = []; // array of indexes of handled tweets
-  let valsRng = gsGetValuesAndFormulas(range);
+  let valsRng = gsGetValuesWithFormulas(range);
   for (let t = 0; t < tweets.length && valsRng.length > idxsUpdatedTweets.length; t++) {
     for (let i = 0; i < valsRng.length; i++) {
       let objRow = valsRng[i];
-      if (tweets[t].id_str == objRow[headerInfo.headerCols.id_str] ) { //&& tweets[t].user.id_str == objRow[headerInfo.headerCols.user_id_str]) {
+      if (tweets[t].id_str == objRow[headerInfo.headerCols.id_str] ) {
         objRow[headerInfo.headerCols.favorite_count] = tweets[t].favorite_count;
         objRow[headerInfo.headerCols.retweet_count] = tweets[t].retweet_count;
         idxsUpdatedTweets.push(t);
@@ -400,10 +389,7 @@ function addNewTweets(sheet, headerInfo, tweets, idxesUpdatedTweets:number[]) {
   }
   sheet.insertRowsAfter(headerInfo.rowHeader + 1, (tweets.length - idxesUpdatedTweets.length));
   // if new rows need be added under the bottom row...
-  //let range = sheet.getRange( sheet.getLastRow()+1, 1, tweets.length-idxesUpdatedTweets.length, sheet.getLastColumn() );
-  //console.log("row=" + (sheet.getLastRow()+1) + ", col=" + 1 + ", row num=" +  (tweets.length-idxesUpdatedTweets.length) + ", col num=" + sheet.getLastColumn() );
   let range = sheet.getRange(headerInfo.rowHeader + 2, 1, (tweets.length - idxesUpdatedTweets.length), sheet.getLastColumn());
-  //console.log("row=" + (headerInfo.rowHeader+2) + ", col=" + 1 + ", row num=" +  (tweets.length-idxesUpdatedTweets.length) + ", col num=" + sheet.getLastColumn() );
   if (range == null) {
     throw new Error("updateStoredTweets: range wasn't able to acquired.");
   }
@@ -434,36 +420,72 @@ function addNewTweets(sheet, headerInfo, tweets, idxesUpdatedTweets:number[]) {
 }
 
 //
+// Name: getScreenNames
+// Desc:
+//
+function getScreenNames( sheet ):string[] {
+  let range = sheet.getRange(1 + OFFSET_ROW_SCREENNAME_LIST, 1, sheet.getLastRow()-OFFSET_ROW_SCREENNAME_LIST, 1); // Screen names need to be placed at the first column
+  let valsRng = range.getValues();
+  let listScreenNames:string[] = [];
+  for ( let i=0; i<valsRng.length; i++) {
+    if (valsRng[i][0]) {
+      listScreenNames.push((valsRng[i][0]).trim());
+    } else {
+      listScreenNames.push(null);
+    }
+  }
+  return listScreenNames;
+}
+
+//
+// Name: updateSheet
+// Desc:
+//
+function updateSheet( sheet, screenName:string ):boolean {
+  let headerInfo = getHeaderInfo(sheet, HEADER_TITLES);
+  if (!headerInfo) {
+    headerInfo = generateHeader(sheet, screenName, HEADER_TITLES);
+    sheet.setName(headerInfo.screenName);
+  }
+  let tweets = twitterUserTimeline(headerInfo.screenName, 50, true, false, true);
+  if (tweets) {
+    let idxUpdated = updateStoredTweets(tweets, sheet, headerInfo);
+    if (tweets.length > idxUpdated.length) {
+      addNewTweets(sheet, headerInfo, tweets, idxUpdated);
+    }
+  }
+  return true;
+}
+
+//
 // Name: main
 // Desc:
 //  Entry point of this program.
 //
 function main() {
-  let sheets = g_book.getSheets();
-  sheets.forEach(function (sheet) {
-    try {
-      let sheetName = sheet.getName();
-      if (sheetName.match(/^\!.*/)) {
-        return;
+  try {
+    let sheetConfig = g_book.getSheetByName(SHEET_NAME_COMMON_SETTINGS);
+    if (!sheetConfig) {
+      throw new Error("The sheet \"" + SHEET_NAME_COMMON_SETTINGS + "\" was not found.");
+    }
+    let screenNames: string[] = getScreenNames(sheetConfig);
+    for (let i = 0; i < screenNames.length; i++) {
+      if (!screenNames[i]) {
+        continue;
       }
-      let headerInfo = getHeaderInfo(sheet, HEADER_TITLES);
-      if (!headerInfo) {
-        return;
+      let sheet = g_book.getSheetByName(screenNames[i]);
+      if (!sheet) {
+        sheet = g_book.insertSheet(screenNames[i], g_book.getNumSheets());
       }
-      if (null == headerInfo.rowHeader) {
-        headerInfo = generateHeader(sheet, HEADER_TITLES);
-        sheet.setName(headerInfo.screenName);
-      }
-      let tweets = twitterUserTimeline(headerInfo.screenName, 50, true, false, true);
-      if (tweets) {
-        let idxUpdated = updateStoredTweets(tweets, sheet, headerInfo);
-        if (tweets.length > idxUpdated.length) {
-          addNewTweets(sheet, headerInfo, tweets, idxUpdated);
-        }
+      let range = sheetConfig.getRange(i + 1 + OFFSET_ROW_SCREENNAME_LIST, 2, 1, 2);
+      if ( updateSheet(sheet, screenNames[i] ) ) {
+        range.setValues([["OK", g_timestamp]]);
+      } else {
+        range.setValues([["ERR", g_timestamp]]);
       }
     }
-    catch (ex) {
-      errOut(ex.message);
-    }
-  });
+  }
+  catch (ex) {
+    errOut(ex.message);
+  }
 }
