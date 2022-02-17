@@ -11,14 +11,14 @@
 //
 //=====================================================================================================================
 // ID of Target Google Spreadsheet (Book)
-let VAL_ID_TARGET_BOOK           = '1PQdZeCzHgk_pktFmzCK-dbiCipgDOzESjDoU5yi51xY';
+let VAL_ID_TARGET_BOOK           = 'ID for Google Spreadsheet';
 // ID of the Google Drive where the images will be placed
-let VAL_ID_GDRIVE_FOLDER_MEDIA   = '1g8lf_LcSf9zMoB-GAChlciC6JovjYqTY';
+let VAL_ID_GDRIVE_FOLDER_MEDIA   = 'ID for Google Folder';
 // ID of Google Drive to place backup Spreadsheet
-let VAL_ID_GDRIVE_FOLDER_BACKUP  = '1qFPnaZeljn8Gr4twG6484FbAI5qJP0Ki';
+let VAL_ID_GDRIVE_FOLDER_BACKUP  = 'ID for Google Folder';
 // Key and Secret to access Twitter APIs
-let VAL_CONSUMER_API_KEY         = 'vN1to7V6dL1HqXkmg07Owuejr';
-let VAL_CONSUMER_API_SECRET      = 'fR3UCVqYlSa6q4j4V2HUkFe3rwXLr58CMrQpLDmgA9AaNxRwDR';
+let VAL_CONSUMER_API_KEY         = 'API KEY';
+let VAL_CONSUMER_API_SECRET      = 'API SECRET';
 
 //=====================================================================================================================
 // DEFINES
