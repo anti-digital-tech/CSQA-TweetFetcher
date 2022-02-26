@@ -7,18 +7,19 @@
 // Author:  Mune
 //
 // History:
+//  2022-02-26 : Updated to get "source" from each tweet
 //  2021-12-22 : Initial version
 //
 //=====================================================================================================================
 // ID of Target Google Spreadsheet (Book)
-let VAL_ID_TARGET_BOOK           = 'ID for Google Spreadsheet';
+let VAL_ID_TARGET_BOOK           = '1PQdZeCzHgk_pktFmzCK-dbiCipgDOzESjDoU5yi51xY';
 // ID of the Google Drive where the images will be placed
-let VAL_ID_GDRIVE_FOLDER_MEDIA   = 'ID for Google Folder';
+let VAL_ID_GDRIVE_FOLDER_MEDIA   = '1g8lf_LcSf9zMoB-GAChlciC6JovjYqTY';
 // ID of Google Drive to place backup Spreadsheet
-let VAL_ID_GDRIVE_FOLDER_BACKUP  = 'ID for Google Folder';
+let VAL_ID_GDRIVE_FOLDER_BACKUP  = '1qFPnaZeljn8Gr4twG6484FbAI5qJP0Ki';
 // Key and Secret to access Twitter APIs
-let VAL_CONSUMER_API_KEY         = 'API KEY';
-let VAL_CONSUMER_API_SECRET      = 'API SECRET';
+let VAL_CONSUMER_API_KEY         = '';
+let VAL_CONSUMER_API_SECRET      = '';
 
 //=====================================================================================================================
 // DEFINES
@@ -44,6 +45,7 @@ class HeaderRow {
   retweet_count                  : any;
   favorite_count                 : any;
   media                          : any;
+  source                         : any;
 }
 let HEADER_TITLES:HeaderRow = {
   id_str                         : "Tweet Id",
@@ -53,7 +55,8 @@ let HEADER_TITLES:HeaderRow = {
   in_reply_to_screen_name        : "Reply to",
   retweet_count                  : "Retweet Count",
   favorite_count                 : "Favorite Count",
-  media                          : "Media"
+  media                          : "Media",
+  source                         : "Source"
 }
 class HeaderInfo {
   screenName                     : string;
@@ -405,6 +408,9 @@ function addNewTweets(sheet, headerInfo, tweets, idxesUpdatedTweets:number[]) {
     //valsRng[r][headerInfo.headerCols.user_id_str    ] = tweets[t].user.id_str;
     if (tweets[t].in_reply_to_screen_name) {
       valsRng[r][headerInfo.headerCols.in_reply_to_screen_name] = '=HYPERLINK("https://twitter.com/' + tweets[t].in_reply_to_screen_name + '", "' + tweets[t].in_reply_to_screen_name + '")';
+    }
+    if (tweets[t].source) {
+      valsRng[r][headerInfo.headerCols.source] = tweets[t].source.replace(/<[^>]+>/g, '');
     }
     valsRng[r][headerInfo.headerCols.retweet_count  ] = tweets[t].retweet_count;
     valsRng[r][headerInfo.headerCols.favorite_count ] = tweets[t].favorite_count;
